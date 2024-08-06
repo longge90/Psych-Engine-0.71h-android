@@ -56,7 +56,7 @@ jobs:
           haxelib install hxcpp-debug-server
           haxelib install lime 7.9.0
           haxelib install openfl 9.2.0
-          haxelib install flixel 5.5.0
+          haxelib install flixel 5.6.2
           haxelib install flixel-tools 1.5.1
           haxelib install flixel-ui 2.5.0
           haxelib install flixel-addons 3.0.2
@@ -65,11 +65,11 @@ jobs:
           haxelib install SScript 8.1.6
           haxelib install hscript 2.5.0
           haxelib install hxCodec 2.6.0
-          haxelib git discord_rpc https://github.com/Aidan63/linc_discord-rpc
+          haxelib git hxdiscord_rpc https://github.com/MAJigsaw77/hxdiscord_rpc
           haxelib git flxanimate https://github.com/beihu235/flxanimate
           haxelib git linc_luajit https://github.com/superpowers04/linc_luajit
           haxelib git extension-androidtools https://github.com/MaysLastPlay77/extension-androidtools
-          haxelib git extension-orientation https://github.com/HaxeExtension/extension-orientation
+          haxelib git extension-orientation https://github.com/HaxeExtension/extension-orientation.git
           haxelib git androiddialogs https://github.com/beihu235/AndroidDialogs
           haxelib git devicelanguage https://github.com/beihu235/devicelanguage
           haxelib list         
@@ -93,8 +93,37 @@ jobs:
         env:
           cert_pass: nullfunni
           cert_alias_pass: nullfunni
-
       
+      - name: Cleanup
+        run: |
+          gh extension install actions/gh-actions-cache
+          
+          echo "Fetching list of cache key"
+          cacheKeysForPR=$(gh actions-cache list -R $REPO -B $BRANCH -L 100 | cut -f 1 )
+
+          ## Setting this to not fail the workflow while deleting cache keys. 
+          set +e
+          echo "Deleting caches..."
+          for cacheKey in $cacheKeysForPR
+          do
+              gh actions-cache delete $cacheKey -R $REPO -B $BRANCH --confirm
+          done
+          echo "Done"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          BRANCH: refs/pull/${{ github.event.pull_request.number }}/merge
+
+      - name: Save Current Cache
+        id: cache-release-build-android-save
+        uses: actions/cache/save@main
+        with:
+          path: |
+            ~/haxelib
+            ~/.gradle
+            export/release/android/haxe
+            export/release/android/obj
+          key: cache-android-build
 
       - name: Upload Artifact
         uses: actions/upload-artifact@main
